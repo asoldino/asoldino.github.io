@@ -196,14 +196,14 @@ for {
 Effects can be seen as a computation description (errors, latency, IO, ...); `flatMap` is like a glueing tool to chain an effect to another sequentially. It is valid for Options, and also for Futures. Sounds like a pattern.
 
 > Monads in Haskell can be thought of as composable computation descriptions. The essence of monad is thus separation of composition timeline from the composed computation's execution timeline, as well as the ability of computation to implicitly carry extra data, as pertaining to the computation itself, in addition to its one (hence the name) output, that it will produce when run (or queried, or called upon). This lends monads to supplementing pure calculations with features like I/O, common environment, updatable state, etc.
-> - The Haskell Wiki: https://wiki.haskell.org/Monad
+> -The Haskell Wiki: https://wiki.haskell.org/Monad
 
 The Haskell definition of Monad now probably makes a bit of sense. Computations descriptions come through effects, composition comes in term of invoking flatMap after flatMap, extra data is carried over in sense of Thread management, if necessary to run async operations. In Scala there are several libraries that model Monads, this post will use Cats.
 
 > Each monad, or computation type, provides means, subject to Monad Laws, to
 > (a) create a description of a computation that will produce (a.k.a. "return") a given Haskell value, and
 > (b) combine (a.k.a. "bind") a computation description with a reaction to it, – a pure Haskell function that is set to receive a computation-produced value (when and if that happens) and return another computation description, using or dependent on that value if need be, – creating a description of a combined computation that will feed the original computation's output through the reaction while automatically taking care of the particulars of the computational process itself.
-> - The Haskell Wiki: https://wiki.haskell.org/Monad
+> -The Haskell Wiki: https://wiki.haskell.org/Monad
 
 `bind` is exactly `flatMap`, whilst `return` is the concept of wrapping a pure value into an effect in a generic way, for example wrapping 42 into Some(42).
 
@@ -220,6 +220,51 @@ res14: Option[Int] = Some(42)
 Monad[Option].flatMap(betterDivide(2, 3))(num => betterDivide(num, 42))
 
 res15: Option[Int] = Some(0)
+```
+
+or even something like (Option is not IO nor Writer but let's assume this is acceptable):
+
+```scala
+for {
+  _ <- Monad[Option].pure(println("Starting..."))
+
+  num <- betterDivide(2, 3)
+
+  _ <- Monad[Option].pure(println(s"Numerator will be $num"))
+
+  den <- betterDivide(42, 2)
+
+  result <- betterDivide(num, den)
+} yield result
+
+Starting...
+Numerator will be 0
+res16: Option[Int] = Some(0)
+```
+
+### A powerful ally, it is!
+
+```scala
+def sum(a: Int, b: Int) = a + b
+
+def sumF[F[_] : Monad](a: Int, b: Int): F[Int] = Monad[F].pure(sum(a, b))
+
+sumF[Option](4, 2)
+
+res19: Option[Int] = Some(6)
+
+sumF[Future](4, 2)
+
+res20: scala.concurrent.Future[Int] = Future(Success(6))
+
+sumF[List](4, 2)
+
+res21: List[Int] = List(6)
+
+// Wait, List also has a monad?
+Monad[List].flatMap(List(4,8))(x => List(x - 1, x, x + 1))
+
+res22: List[Int] = List(3, 4, 5, 7, 8, 9)
 ```
 
 ## Welcome to GitHub Pages
