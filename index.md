@@ -1,4 +1,6 @@
-## Why effects?
+## A practical walkthrough to Monads
+
+### Why effects?
 Not every possible problem can be described in terms of pure functions, and let's admit it, without the notorious side effects it is not even possible to write meaningful computer programs.
 
 ### Errors
